@@ -1,0 +1,83 @@
+import pygame
+import random
+import time
+import char_creation
+
+pygame.init()
+screen = pygame.display.set_mode((800,600))
+pygame.display.set_caption("Fish Simulator")
+clock = pygame.time.Clock()
+
+
+
+
+class Fish:
+    def __init__(self):
+        self.fishImage = pygame.image.load("Octopus.png").convert_alpha()
+        pygame.Surface.set_colorkey (self.fishImage, [255,0,255])
+        self.xpos = random.randint(0, 750)
+        self.ypos = random.randint(0, 550)
+        self.speed = 1
+        self.xDir = random.randint(-1,1)
+        self.yDir = random.randint(-1,1)
+        self.last_change_time = time.time() #grab starting time
+
+    def move(self):
+        # Move the fish
+        self.xpos += self.xDir* self.speed
+        self.ypos += self.yDir * self.speed
+
+        # Change direction every 3 seconds
+        if time.time() - self.last_change_time > 3:  
+            self.xDir = random.randint(-1,1)
+            self.yDir = random.randint(-1,1)
+            self.last_change_time = time.time() #reset the time
+
+        # Check for collision with walls and change direction
+        if self.xpos <= 0 or self.xpos >= 750:
+            self.xDir *= -1
+        if self.ypos <= 0 or self.ypos>= 550:
+            self.yDir *= -1
+
+    def draw(self, screen):
+        screen.blit(self.fishImage, (self.xpos, self.ypos))
+#-=---------------------------------------------------
+class Background:
+    def __init__(self):
+        self.background_image = pygame.image.load('background_image.png').convert_alpha()
+        self.background_image2 = pygame.image.load('background_image2.png').convert_alpha()
+        self.bgx = 0 #background x variable for side scroller
+        self.bg_width = self.background_image.get_width()
+        self.fish = Fish()
+
+
+        running = True
+        while running:# Game loop########################################################
+            clock.tick(60)
+            #input/event section-----------------------------
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            #physics/update section--------------------------
+            fish.move()
+
+
+            #render section----------------------------------
+            # Fill the screen with a background color
+            screen.fill((0, 150, 255))
+
+            # Draw the fish
+            screen.blit(background_image, (bgx,0))
+            screen.blit(background_image2, (bgx + bg_width,0))
+            fish.draw(screen)
+
+            # Update the display
+            pygame.display.flip()
+            bgx -= 2
+            if bgx <= -bg_width:
+                bgx = 0
+
+            #end of game loop!#######################################################
+
+        pygame.quit()
