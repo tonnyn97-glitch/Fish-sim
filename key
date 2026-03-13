@@ -2,7 +2,6 @@ import pygame
 import random
 import time
 import char_creation
-
 pygame.init()
 screen = pygame.display.set_mode((800,600))
 pygame.display.set_caption("Fish Simulator")
@@ -21,6 +20,10 @@ class Fish:
         self.xDir = random.randint(-1,1)
         self.yDir = random.randint(-1,1)
         self.last_change_time = time.time() #grab starting time
+        self.rect = self.fishImage.get_rect()#This creates a new Rect object (a rectangle) that has the exact same width and height as your fishImage.
+        self.width = self.rect.width# get the width of the rectangle and assign it to self.width
+        self.height = self.rect.height#gets the height of the rectangle and assign it to self.height
+        
 
     def move(self):
         # Move the fish
@@ -29,14 +32,26 @@ class Fish:
 
         # Change direction every 3 seconds
         if time.time() - self.last_change_time > 3:  
-            self.xDir = random.randint(-1,1)
-            self.yDir = random.randint(-1,1)
+            self.xDir = random.choice([-1, 1])#chnged from rand int cuz we want consistent pos or neg rest donst matter
+            self.yDir = random.choice([-1, 1])
+
             self.last_change_time = time.time() #reset the time
 
         # Check for collision with walls and change direction
-        if self.xpos <= 0 or self.xpos >= 750:
+       # Left/Right
+        if self.xpos <= 0:
+            self.xpos = 0        # Snap to edge
+            self.xDir *= -1      # Reverse
+        elif self.xpos >= 800 - self.fishImage.get_width():
+            self.xpos = 800 - self.fishImage.get_width()
             self.xDir *= -1
-        if self.ypos <= 0 or self.ypos>= 550:
+
+        # Up/Down
+        if self.ypos <= 0:
+            self.ypos = 0
+            self.yDir *= -1
+        elif self.ypos >= 600 - self.fishImage.get_height():
+            self.ypos = 600 - self.fishImage.get_height()
             self.yDir *= -1
 
     def draw(self, screen):
@@ -50,7 +65,7 @@ class Background:
         self.bg_width = self.background_image.get_width()
         self.fish = Fish()
 
-
+    def run(self):
         running = True
         while running:# Game loop########################################################
             clock.tick(60)
@@ -60,7 +75,7 @@ class Background:
                     running = False
 
             #physics/update section--------------------------
-            fish.move()
+            self.fish.move()
 
 
             #render section----------------------------------
@@ -68,16 +83,19 @@ class Background:
             screen.fill((0, 150, 255))
 
             # Draw the fish
-            screen.blit(background_image, (bgx,0))
-            screen.blit(background_image2, (bgx + bg_width,0))
-            fish.draw(screen)
+            screen.blit(self.background_image, (self.bgx,0))
+            screen.blit(self.background_image2, (self.bgx + self.bg_width,0))
+            self.fish.draw(screen)
 
             # Update the display
             pygame.display.flip()
-            bgx -= 2
-            if bgx <= -bg_width:
-                bgx = 0
+            self.bgx -= 2
+            if self.bgx <= -self.bg_width:
+                self.bgx = 0
 
             #end of game loop!#######################################################
 
         pygame.quit()
+
+
+Background().run()
