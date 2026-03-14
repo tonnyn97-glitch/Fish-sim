@@ -140,15 +140,9 @@ class App:
             if self.mode == "draw":
                 for ev in events:
                     if self.draw_screen.handle_event(ev) == "play":
-                        self.play_screen = PlayScreen(self.draw_screen.to_surface())
-                        self.mode = "play"
+                        return self.draw_screen.to_surface()  # exit and send surface back
                 self.draw_screen.update()
                 self.draw_screen.draw(screen)
-
-            elif self.mode == "play":
-                for ev in events:
-                    self.play_screen.handle_event(ev)
-                self.play_screen.draw(screen)
 
             pygame.display.flip()
 

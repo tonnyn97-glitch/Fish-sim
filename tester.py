@@ -1,16 +1,19 @@
 import pygame
 import random
 import time
-
+import c2
 pygame.init()
 screen = pygame.display.set_mode((800,600))
 pygame.display.set_caption("Fish Simulator")
 clock = pygame.time.Clock()
 
+char_surf = c2.App().run()
+screen = pygame.display.set_mode((800, 600))  # reclaim the screen after char creation
+pygame.display.set_caption("Fish Simulator")   # reset the title too
 
 class Fish:
-    def __init__(self):
-        self.fishImage = pygame.image.load("Octopus.png").convert_alpha()
+    def __init__(self,char_surf):
+        self.fishImage = char_surf
         pygame.Surface.set_colorkey (self.fishImage, [255,0,255])
         self.xpos = random.randint(0, 750)
         self.ypos = random.randint(0, 550)
@@ -56,12 +59,12 @@ class Fish:
         screen.blit(self.fishImage, (self.xpos, self.ypos))
 #-=---------------------------------------------------
 class Background:
-    def __init__(self):
+    def __init__(self,char_surf):
         self.background_image = pygame.image.load('background_image.png').convert_alpha()
         #self.background_image2 = pygame.image.load('background_image2.png').convert_alpha()
         self.bgx = 0 #background x variable for side scroller
         self.bg_width = self.background_image.get_width()
-        self.fish = Fish()
+        self.fish = Fish(char_surf)
 
     def run(self):
         running = True
@@ -97,4 +100,4 @@ class Background:
         pygame.quit()
 
 
-Background().run()
+Background(char_surf).run()
