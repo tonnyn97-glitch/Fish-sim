@@ -15,6 +15,28 @@ fishImage = pygame.image.load("oct.png").convert_alpha()
 bgx = 0 #background x variable for side scroller
 bg_width = background_image.get_width()
 
+def game_over_screen(screen, clock):
+    font_big = pygame.font.SysFont("Arial", 72, bold=True)
+    title = font_big.render("GAME OVER", True, (220, 40, 40))
+    title1 = font_big.render("You died", True, (220, 40, 40))
+
+    waiting = True
+    while waiting:
+        clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                waiting = False
+           
+        screen.fill((0, 20, 60))
+        screen.blit(title, (400 - title.get_width() // 2, 220))
+        screen.blit(title1, (400 - title1.get_width() // 2, 320))
+        pygame.display.flip()
+
+    pygame.quit()
+
+def check_game_over(is_dead):
+    if is_dead:
+        game_over_screen(screen, clock)
 
 class Fish:
     def __init__(self):
@@ -35,30 +57,40 @@ class Fish:
         self.rect.topleft = (self.xpos, self.ypos)
 
     def move(self, keys):
-        # Move the fish
-        self.xpos += self.vx
-        self.ypos += self.vy
-       
         if keys[pygame.K_RIGHT]:
             self.vx = 3
         elif keys[pygame.K_LEFT]:
             self.vx = -3
         else:
             self.vx = 0
-           
+            
         if keys[pygame.K_UP]:
             self.vy = -3
         elif keys[pygame.K_DOWN]:
             self.vy = 3
         else:
-            self.vy = .1 #move down when not moving
+            self.vy = 0.1
 
-        # Update the rect position so the hitbox moves with the image
-        img_w = self.fishImage.get_width()
-        img_h = self.fishImage.get_height()
-        print(fishImage.get_width())
+        self.rect.x += self.vx
+        self.rect.y += self.vy
+       
 
-        self.rect.center = (self.xpos + img_w // 2, self.ypos + img_h // 2)
+        if self.rect.right > 800:
+            self.rect.right=800
+
+        elif self.rect.left < 0:
+            self.rect.left = 0
+
+        if self.rect.bottom > 600:
+             self.rect.bottom = 600 
+
+        elif self.rect.top < 0:
+            self.rect.top = 0
+
+        self.xpos = self.rect.centerx - (self.fishImage.get_width() / 2)
+        self.ypos = self.rect.centery - (self.fishImage.get_height() / 2)
+        
+
       
 
     def draw(self, screen):
@@ -68,8 +100,7 @@ class Fish:
         if self.health>118:
             self.health=118
         if self.health<0:
-            #self.die=True
-            self.health=1
+            self.die=True
         pygame.draw.rect(screen,(0, 255, 0), (self.xpos+35, self.ypos+40, self.health, 5))#healthbar
        
     def collide(self, FUD):
@@ -176,6 +207,7 @@ while running:# Game loop#######################################################
         flakeBag[i].draw(screen)#MOVED TO RENDER
        
     # Update the display
+    check_game_over(fish.die)
     pygame.display.flip()
 
     #end of game loop!#######################################################
