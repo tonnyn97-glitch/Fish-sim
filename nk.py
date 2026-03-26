@@ -2,7 +2,8 @@ import pygame
 import random
 import time
 pygame.init()
-screen = pygame.display.set_mode((800,600))#x,y
+SW, SH = 800, 600
+screen = pygame.display.set_mode((SW,SH))#x,y
 pygame.display.set_caption("Fish Simulator")
 clock = pygame.time.Clock()
 
@@ -88,7 +89,7 @@ class CharCreator:
                 pygame.draw.rect(screen, (80,200,255), (px-2, py-2, 34, 34), 2)
 
         font = pygame.font.SysFont("Arial", 16)
-        screen.blit(font.render("Draw your fish! ENTER when done", True, (80,200,255)), (CX, 50))
+        screen.blit(font.render("Draw your enemy ENTER when done", True, (80,200,255)), (CX, 50))
         pygame.display.flip()
 
 class Enemy:
@@ -227,14 +228,14 @@ class Fish:
         self.rect.y += self.vy
        
 
-        if self.rect.right > 800:
-            self.rect.right=800
+        if self.rect.right > SW:
+            self.rect.right=SW
 
         elif self.rect.left < 0:
             self.rect.left = 0
 
-        if self.rect.bottom > 600:
-             self.rect.bottom = 600 
+        if self.rect.bottom > SH:
+             self.rect.bottom = SH 
 
         elif self.rect.top < 0:
             self.rect.top = 0
@@ -289,7 +290,7 @@ class bubble:
         self.ypos -= random.randrange(1, 3) # always moving up
         if self.ypos < 0:
             #self.ypos = random.randrange(500, 700)
-            self.ypos = random.randrange(610, 700)# you want bubbles to reset bwlow screen 500 is on screen, screen is 600 px long
+            self.ypos = random.randrange(610, 700)# you want bubbles to reset bwlow screen 500 is on screen, screen is SH px long
             # i cant run the the code cuz i dont have the images but might want to change x pos too to make it more random
 
     def draw(self, screen):
@@ -304,12 +305,12 @@ ticker = 0
 flakeBag = []
 for i in range(50):
     #flakeBag.append(bubble(random.randrange(0, 500), random.randrange(-500, 0)))# if game slow i might know why, ps this line is why
-    flakeBag.append(bubble(random.randrange(0, 800), random.randrange(600, 1000)))# SCRREN IS 800 WIDE 500 TOO NARROW OF RANGE,
+    flakeBag.append(bubble(random.randrange(0, SW), random.randrange(SH, 1000)))# SCRREN IS SW WIDE 500 TOO NARROW OF RANGE,
     #REMBER NEGATIVES ARE ABOVE SCREEN WE WANT TO SPAWN BUBBLES BELOW SCREEN
 
 SPACING = 120
 GROUND_Y = 500
-seaweed_list = [Seaweed(i * SPACING, GROUND_Y, seaweed_img) for i in range(800 // SPACING + 1)]
+seaweed_list = [Seaweed(i * SPACING, GROUND_Y, seaweed_img) for i in range(SW // SPACING + 1)]
 chest_list = []
 last_chest_time = time.time()
 enemy_surf     = run_creator()   # draw the enemy in character creator
@@ -361,8 +362,8 @@ while running:# Game loop#######################################################
     seaweed_list = [sw for sw in seaweed_list if not sw.is_offscreen()]
     for sw in seaweed_list:
         sw.update()
-    if len(seaweed_list) == 0 or seaweed_list[-1].xpos <= 800 - SPACING:
-        seaweed_list.append(Seaweed(800, GROUND_Y, seaweed_img))
+    if len(seaweed_list) == 0 or seaweed_list[-1].xpos <= SW - SPACING:
+        seaweed_list.append(Seaweed(SW, GROUND_Y, seaweed_img))
     
         # spawn a chest every 10 seconds
     if time.time() - last_chest_time >= 10:
