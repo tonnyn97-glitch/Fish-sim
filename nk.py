@@ -11,10 +11,131 @@ background_image = pygame.image.load('background_image.png').convert_alpha()
 background_image2 = pygame.image.load('background_image2.png').convert_alpha()
 shrimp_img = pygame.image.load("shrimp.png").convert_alpha()
 fishImage = pygame.image.load("oct.png").convert_alpha()
-
+seaweed_img = pygame.image.load("seaw3ed.png").convert_alpha()
+pygame.Surface.set_colorkey(seaweed_img, [255, 0, 255])
 bgx = 0 #background x variable for side scroller
 bg_width = background_image.get_width()
+chest_closed_img = pygame.image.load("chest_closed.png.png").convert_alpha()
+chest_open_img   = pygame.image.load("chest_open.png.png").convert_alpha()
+CELL  = 10
+GRID  = 40
+SCALE = 3
+CX, CY = 200, 80
 
+PALETTE = [
+    (255,255,255),(180,180,180),(80,80,80),(0,0,0),
+    (255,60,60),(255,160,40),(255,220,50),(70,200,70),
+    (60,160,255),(120,80,255),(220,80,220),(255,80,160),
+] #color list
+
+class CharCreator:
+    def __init__(self):
+        self.grid  = [[None]*GRID for _ in range(GRID)]
+        self.color = (255, 255, 255)
+        self.held  = False
+
+    def get_cell(self, mx, my):
+        rx, ry = mx - CX, my - CY
+        if 0 <= rx < GRID*CELL and 0 <= ry < GRID*CELL:
+            return rx // CELL, ry // CELL
+        return None
+
+    def to_surface(self):
+        surf = pygame.Surface((GRID, GRID), pygame.SRCALPHA)
+        for y in range(GRID):
+            for x in range(GRID):
+                if self.grid[y][x]:
+                    surf.set_at((x, y), self.grid[y][x])
+        return pygame.transform.scale(surf, (GRID*SCALE, GRID*SCALE))
+
+    def update(self, events):
+        for e in events:
+            if e.type == pygame.MOUSEBUTTONDOWN:
+                self.held = True
+                for i, col in enumerate(PALETTE):
+                    px = 20 + (i % 6) * 36
+                    py = 500 + (i // 6) * 36
+                    if px <= e.pos[0] <= px+30 and py <= e.pos[1] <= py+30:
+                        self.color = col
+            if e.type == pygame.MOUSEBUTTONUP:
+                self.held = False
+            if e.type == pygame.KEYDOWN and e.key == pygame.K_RETURN:
+                return self.to_surface()
+
+        if self.held:
+            cell = self.get_cell(*pygame.mouse.get_pos())
+            if cell:
+                self.grid[cell[1]][cell[0]] = self.color
+        return None
+
+    def draw(self):
+        screen.fill((18, 18, 28))
+        for y in range(GRID):
+            for x in range(GRID):
+                if self.grid[y][x]:
+                    pygame.draw.rect(screen, self.grid[y][x],
+                                     (CX+x*CELL, CY+y*CELL, CELL, CELL))
+        for i in range(GRID+1):
+            pygame.draw.line(screen, (40,40,55), (CX+i*CELL, CY), (CX+i*CELL, CY+GRID*CELL))
+            pygame.draw.line(screen, (40,40,55), (CX, CY+i*CELL), (CX+GRID*CELL, CY+i*CELL))
+        pygame.draw.rect(screen, (80,200,255), (CX-1, CY-1, GRID*CELL+2, GRID*CELL+2), 2)
+
+        for i, col in enumerate(PALETTE):
+            px = 20 + (i % 6) * 36
+            py = 500 + (i // 6) * 36
+            pygame.draw.rect(screen, col, (px, py, 30, 30), border_radius=4)
+            if col == self.color:
+                pygame.draw.rect(screen, (80,200,255), (px-2, py-2, 34, 34), 2)
+
+        font = pygame.font.SysFont("Arial", 16)
+        screen.blit(font.render("Draw your fish! ENTER when done", True, (80,200,255)), (CX, 50))
+        pygame.display.flip()
+
+class Enemy:
+    def __init__(self, surf):
+        self.image = surf
+        self.rect  = surf.get_rect(topleft=(820, random.randint(50, 500)))
+
+    def update(self):
+        self.rect.x -= 3  # move left toward player
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def is_offscreen(self):
+        return self.rect.right < 0
+    
+def run_creator():
+    creator = CharCreator()
+    while True:
+        clock.tick(60)
+        events = pygame.event.get()
+        for e in events:
+            if e.type == pygame.QUIT:
+                pygame.quit(); raise SystemExit
+        result = creator.update(events)
+        creator.draw()
+        if result:
+            return result
+class Chest:
+    def __init__(self, x):
+        self.closed = pygame.transform.scale(chest_closed_img, (220, 200))  # width, height
+        self.open   = pygame.transform.scale(chest_open_img,   (220, 200))
+        self.rect   = self.closed.get_rect(topleft=(x, 390))  # sits on floor
+        self.xpos   = x
+
+    def update(self):
+        self.rect.x -= 2  # scroll with background
+
+    def draw(self, screen):
+        mouse = pygame.mouse.get_pos()
+        if self.rect.collidepoint(mouse):
+            screen.blit(self.open, self.rect)
+        else:
+            screen.blit(self.closed, self.rect)
+
+    def is_offscreen(self):
+        return self.rect.right < 0
 def game_over_screen(screen, clock):
     font_big = pygame.font.SysFont("Arial", 72, bold=True)
     title = font_big.render("GAME OVER", True, (220, 40, 40))
@@ -37,6 +158,37 @@ def game_over_screen(screen, clock):
 def check_game_over(is_dead):
     if is_dead:
         game_over_screen(screen, clock)
+
+class Seaweed:
+    def __init__(self, x, y, seaweed_img):
+        self.xpos = x
+        self.ypos = y
+        self.seaweed_img = seaweed_img
+        self.frameWidth = 100
+        self.frameHeight = 100
+        self.numFrames = 4
+        self.rowNum = 0
+        self.frameNum = 0
+        self.ticker = 0
+
+    def update(self):
+        # Animate frames
+        self.ticker += 1
+        if self.ticker % 12 == 0:
+            self.frameNum += 2
+            if self.frameNum >= self.numFrames:
+                self.frameNum = 0
+
+        # Scroll left with background (match bgx speed of -2)
+        self.xpos -= 2
+
+    def draw(self, screen):
+        screen.blit(self.seaweed_img, (self.xpos, self.ypos),
+                    (self.frameWidth * self.frameNum, self.rowNum * self.frameHeight,
+                     self.frameWidth, self.frameHeight))
+
+    def is_offscreen(self):
+        return self.xpos < -self.frameWidth  # True once fully past left edge
 
 class Fish:
     def __init__(self):
@@ -89,9 +241,7 @@ class Fish:
 
         self.xpos = self.rect.centerx - (self.fishImage.get_width() / 2)
         self.ypos = self.rect.centery - (self.fishImage.get_height() / 2)
-        
 
-      
 
     def draw(self, screen):
         screen.blit(self.fishImage, (self.xpos, self.ypos))
@@ -148,7 +298,7 @@ class bubble:
 
 
 # instantiate a fish object
-fish = Fish()
+
 food = []
 ticker = 0
 flakeBag = []
@@ -157,7 +307,15 @@ for i in range(50):
     flakeBag.append(bubble(random.randrange(0, 800), random.randrange(600, 1000)))# SCRREN IS 800 WIDE 500 TOO NARROW OF RANGE,
     #REMBER NEGATIVES ARE ABOVE SCREEN WE WANT TO SPAWN BUBBLES BELOW SCREEN
 
-
+SPACING = 120
+GROUND_Y = 500
+seaweed_list = [Seaweed(i * SPACING, GROUND_Y, seaweed_img) for i in range(800 // SPACING + 1)]
+chest_list = []
+last_chest_time = time.time()
+enemy_surf     = run_creator()   # draw the enemy in character creator
+enemy_list     = []
+last_enemy_time = time.time()
+fish = Fish()
 running = True
 while running:# Game loop########################################################
     clock.tick(60)
@@ -174,13 +332,47 @@ while running:# Game loop#######################################################
     if bgx <= -bg_width:
         bgx = 0
    
+   #############
+   # spawn enemy every 5 seconds
+    if time.time() - last_enemy_time >= 5:
+        enemy_list.append(Enemy(enemy_surf))
+        last_enemy_time = time.time()
+
+    # update and cull offscreen enemies
+    enemy_list = [e for e in enemy_list if not e.is_offscreen()]
+    for e in enemy_list:
+        e.update()
+
+    # check collision with fish
+    for e in enemy_list[:]:
+        if fish.rect.colliderect(e.rect):
+            fish.health -= 20
+            enemy_list.remove(e)
+
+   ################
 
     #spawn food every 60 ticks
     ticker += 1
     if ticker % 60 == 0: #change 60 for more or less spawning
-        fish.health-=10
+        fish.health-=1
         food.append(Food(shrimp_img)) #create food
         ticker = 0 #reset ticker
+    
+    seaweed_list = [sw for sw in seaweed_list if not sw.is_offscreen()]
+    for sw in seaweed_list:
+        sw.update()
+    if len(seaweed_list) == 0 or seaweed_list[-1].xpos <= 800 - SPACING:
+        seaweed_list.append(Seaweed(800, GROUND_Y, seaweed_img))
+    
+        # spawn a chest every 10 seconds
+    if time.time() - last_chest_time >= 10:
+        chest_list.append(Chest(820))
+        last_chest_time = time.time()
+
+    chest_list = [c for c in chest_list if not c.is_offscreen()]
+    for c in chest_list:
+        c.update()
+
     '''  
     for i in range(len(food)):
         food[i].move()
@@ -194,9 +386,17 @@ while running:# Game loop#######################################################
     screen.fill((0, 150, 255))
 
     # Draw the fish
-    screen.blit(background_image, (bgx,0))
-    screen.blit(background_image2, (bgx + bg_width,0))
-    fish.draw(screen)
+    screen.blit(background_image, (bgx, 0))
+    screen.blit(background_image2, (bgx + bg_width, 0))
+
+    for c in chest_list:      # behind seaweed
+        c.draw(screen)
+    # for sw in seaweed_list:   # in front of chest
+    #     sw.draw(screen)
+    for e in enemy_list:
+        e.draw(screen) 
+    fish.draw(screen)         # fish on top
+
     for i in range(len(food)):
         food[i].draw(screen,shrimp_img)
    
@@ -205,7 +405,8 @@ while running:# Game loop#######################################################
     for i in range(len(flakeBag)):
         flakeBag[i].move()
         flakeBag[i].draw(screen)#MOVED TO RENDER
-       
+    for sw in seaweed_list:
+        sw.draw(screen)
     # Update the display
     check_game_over(fish.die)
     pygame.display.flip()
