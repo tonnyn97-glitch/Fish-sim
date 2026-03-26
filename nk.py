@@ -180,7 +180,7 @@ class Seaweed:
                 self.frameNum = 0
 
         # Scroll left with background (match bgx speed of -2)
-        self.xpos -= 2
+        self.xpos -= 1
 
     def draw(self, screen):
         screen.blit(self.seaweed_img, (self.xpos, self.ypos),
@@ -245,7 +245,7 @@ class Fish:
 
     def draw(self, screen):
         screen.blit(self.fishImage, (self.xpos, self.ypos))
-        pygame.draw.rect(screen, (245, 25, 21), self.rect, 2) #hitbox
+        #pygame.draw.rect(screen, (245, 25, 21), self.rect, 2) #hitbox
 
         if self.health>118:
             self.health=118
@@ -274,7 +274,7 @@ class Food():
                
     def draw(self, screen, shrimp_img):
         screen.blit(shrimp_img, self.rect)
-        pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
+        #pygame.draw.rect(screen, (255, 0, 0), self.rect, 2)
        
 class bubble:
     def __init__(self, x, y):
@@ -328,13 +328,13 @@ while running:# Game loop#######################################################
     keys = pygame.key.get_pressed() #get input
     fish.move(keys)
     fish.collide(food)
-    bgx -= 2
+    bgx -= 1
     if bgx <= -bg_width:
         bgx = 0
    
    #############
-   # spawn enemy every 5 seconds
-    if time.time() - last_enemy_time >= 5:
+   # spawn enemy every 2 seconds
+    if time.time() - last_enemy_time >= 2:
         enemy_list.append(Enemy(enemy_surf))
         last_enemy_time = time.time()
 
@@ -354,7 +354,7 @@ while running:# Game loop#######################################################
     #spawn food every 60 ticks
     ticker += 1
     if ticker % 60 == 0: #change 60 for more or less spawning
-        fish.health-=1
+        fish.health-=5
         food.append(Food(shrimp_img)) #create food
         ticker = 0 #reset ticker
     
