@@ -2,16 +2,18 @@ import pygame
 import random
 import time
 pygame.init()
-SW, SH = 800, 600
+SW, SH = 1300, 700
 screen = pygame.display.set_mode((SW,SH))#x,y
 pygame.display.set_caption("Fish Simulator")
 clock = pygame.time.Clock()
 
 #Images
-background_image = pygame.image.load('background_image.png').convert_alpha()
-background_image2 = pygame.image.load('background_image2.png').convert_alpha()
+background_image = pygame.transform.scale(pygame.image.load('background_image.png').convert_alpha(), (SW, SH))
+background_image2 = pygame.transform.scale(pygame.image.load('background_image2.png').convert_alpha(), (SW, SH))
 shrimp_img = pygame.image.load("shrimp.png").convert_alpha()
 fishImage = pygame.image.load("oct.png").convert_alpha()
+FISH_SCALE = .5  # change this number to resize fish and have same scale
+fishImage = pygame.transform.scale(fishImage, (int(fishImage.get_width() * FISH_SCALE), int(fishImage.get_height() * FISH_SCALE)))
 seaweed_img = pygame.image.load("seaw3ed.png").convert_alpha()
 pygame.Surface.set_colorkey(seaweed_img, [255, 0, 255])
 bgx = 0 #background x variable for side scroller
@@ -95,7 +97,7 @@ class CharCreator:
 class Enemy:
     def __init__(self, surf):
         self.image = surf
-        self.rect  = surf.get_rect(topleft=(820, random.randint(50, 500)))
+        self.rect  = surf.get_rect(topleft=(SW+20, random.randint(50, SH-150)))
 
     def update(self):
         self.rect.x -= 3  # move left toward player
@@ -122,7 +124,7 @@ class Chest:
     def __init__(self, x):
         self.closed = pygame.transform.scale(chest_closed_img, (220, 200))  # width, height
         self.open   = pygame.transform.scale(chest_open_img,   (220, 200))
-        self.rect   = self.closed.get_rect(topleft=(x, 390))  # sits on floor
+        self.rect   = self.closed.get_rect(topleft=(x,SH-210))  # sits on floor
         self.xpos   = x
 
     def update(self):
@@ -194,19 +196,17 @@ class Seaweed:
 class Fish:
     def __init__(self):
         self.fishImage = fishImage
-        self.rect=fishImage.get_rect()
-        self.rect= self.rect.inflate(-70,-70)
-        pygame.Surface.set_colorkey (self.fishImage, [255,0,255])
-        self.xpos = random.randint(0, 700)
-        self.ypos = random.randint(0, 550)
-        self.speed = 1
-        self.die=False
+        self.rect = fishImage.get_rect()
+        self.rect = self.rect.inflate(-int(70 * FISH_SCALE), -int(70 * FISH_SCALE))
+        pygame.Surface.set_colorkey(self.fishImage, [255, 0, 255])
+        self.xpos = random.randint(0, SW - fishImage.get_width())
+        self.ypos = random.randint(0, SH - fishImage.get_height())
+        self.die = False
         self.vx = 0
         self.vy = 0
-        self.w = 50 #width
-        self.h = 60 #height
-        self.health = 118
-        self.last_change_time = time.time() #grab starting time
+        self.health = self.rect.width  # healthbar width = hitbox width, scales automatically
+        self.max_health = self.rect.width
+        self.last_change_time = time.time()
         self.rect.topleft = (self.xpos, self.ypos)
 
     def move(self, keys):
@@ -246,28 +246,31 @@ class Fish:
 
     def draw(self, screen):
         screen.blit(self.fishImage, (self.xpos, self.ypos))
-        #pygame.draw.rect(screen, (245, 25, 21), self.rect, 2) #hitbox
 
-        if self.health>118:
-            self.health=118
-        if self.health<0:
-            self.die=True
-        pygame.draw.rect(screen,(0, 255, 0), (self.xpos+35, self.ypos+40, self.health, 5))#healthbar
-       
+        if self.health > self.max_health:
+            self.health = self.max_health
+        if self.health < 0:
+            self.die = True
+
+        # healthbar offset scales with fish size
+        bar_x = self.rect.left
+        bar_y = self.rect.bottom + 4
+        pygame.draw.rect(screen, (80, 0, 0),   (bar_x, bar_y, self.max_health, int(6 * FISH_SCALE)))
+        pygame.draw.rect(screen, (0, 255, 0),  (bar_x, bar_y, self.health,     int(6 * FISH_SCALE)))
     def collide(self, FUD):
         #checks every food to see if the fish is colliding with it
         #if so, remove that food
         for food in FUD[:]:
              if self.rect.colliderect(food.rect):
-                self.health += 5
+                self.health += 20
                 FUD.remove(food)
                
 class Food():
     def __init__(self, shrimp_img):
         
         self.rect = shrimp_img.get_rect().inflate(-10, -10)
-        self.rect.x = random.randint(810, 1100)
-        self.rect.y = random.randint(10, 550)
+        self.rect.x = random.randint(SW+10, SW+500)
+        self.rect.y = random.randint(10, SH-self.rect.height)
         
     def move(self):
     
@@ -290,7 +293,7 @@ class bubble:
         self.ypos -= random.randrange(1, 3) # always moving up
         if self.ypos < 0:
             #self.ypos = random.randrange(500, 700)
-            self.ypos = random.randrange(610, 700)# you want bubbles to reset bwlow screen 500 is on screen, screen is SH px long
+            self.ypos = random.randrange(SH+10, SH+120)# you want bubbles to reset bwlow screen 500 is on screen, screen is SH px long
             # i cant run the the code cuz i dont have the images but might want to change x pos too to make it more random
 
     def draw(self, screen):
@@ -303,13 +306,13 @@ class bubble:
 food = []
 ticker = 0
 flakeBag = []
-for i in range(50):
+for i in range(1000):
     #flakeBag.append(bubble(random.randrange(0, 500), random.randrange(-500, 0)))# if game slow i might know why, ps this line is why
-    flakeBag.append(bubble(random.randrange(0, SW), random.randrange(SH, 1000)))# SCRREN IS SW WIDE 500 TOO NARROW OF RANGE,
+    flakeBag.append(bubble(random.randrange(0, SW), random.randrange(0, SH+300)))# SCRREN IS SW WIDE 500 TOO NARROW OF RANGE,
     #REMBER NEGATIVES ARE ABOVE SCREEN WE WANT TO SPAWN BUBBLES BELOW SCREEN
 
 SPACING = 120
-GROUND_Y = 500
+GROUND_Y = SH-100#tie seaweed to realtive ground
 seaweed_list = [Seaweed(i * SPACING, GROUND_Y, seaweed_img) for i in range(SW // SPACING + 1)]
 chest_list = []
 last_chest_time = time.time()
@@ -347,7 +350,7 @@ while running:# Game loop#######################################################
     # check collision with fish
     for e in enemy_list[:]:
         if fish.rect.colliderect(e.rect):
-            fish.health -= 20
+            fish.health -= 10
             enemy_list.remove(e)
 
    ################
@@ -355,7 +358,7 @@ while running:# Game loop#######################################################
     #spawn food every 60 ticks
     ticker += 1
     if ticker % 60 == 0: #change 60 for more or less spawning
-        fish.health-=5
+        fish.health-=2
         food.append(Food(shrimp_img)) #create food
         ticker = 0 #reset ticker
     
@@ -367,7 +370,7 @@ while running:# Game loop#######################################################
     
         # spawn a chest every 10 seconds
     if time.time() - last_chest_time >= 10:
-        chest_list.append(Chest(820))
+        chest_list.append(Chest(SW+20))
         last_chest_time = time.time()
 
     chest_list = [c for c in chest_list if not c.is_offscreen()]
