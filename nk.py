@@ -55,7 +55,7 @@ class CharCreator:
         for e in events:
             if e.type == pygame.MOUSEBUTTONDOWN:
                 self.held = True
-                for i, col in enumerate(PALETTE):
+                for i, col in enumerate(PALETTE):#gives item and its index
                     px = 20 + (i % 6) * 36
                     py = 500 + (i // 6) * 36
                     if px <= e.pos[0] <= px+30 and py <= e.pos[1] <= py+30:
